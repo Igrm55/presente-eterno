@@ -1,6 +1,5 @@
-// api/send.js - VERSÃO FINAL COM MOTOR FORMIDABLE
+// api/send.js - VERSÃO FINAL E DEFINITIVA
 
-// Importamos a nova biblioteca 'formidable' e o 'fs' para ler ficheiros.
 import { formidable } from 'formidable';
 import nodemailer from 'nodemailer';
 import fs from 'fs';
@@ -12,56 +11,80 @@ export const config = {
     },
 };
 
+// Nova função dedicada para processar o formulário com Formidable.
+// Isto garante que o stream da requisição é manuseado corretamente.
+const parseForm = (req) => {
+    return new Promise((resolve, reject) => {
+        const form = formidable({});
+        form.parse(req, (err, fields, files) => {
+            if (err) {
+                reject(err);
+                return;
+            }
+            resolve({ fields, files });
+        });
+    });
+};
+
 export default async function handler(req, res) {
     if (req.method !== 'POST') {
         return res.status(405).json({ message: 'Apenas o método POST é permitido' });
     }
 
     try {
-        // [A GRANDE MUDANÇA ESTÁ AQUI]
-        // Usamos o 'formidable' para processar o formulário. Ele é muito mais robusto.
-        const data = await new Promise((resolve, reject) => {
-            const form = formidable({});
-            form.parse(req, (err, fields, files) => {
-                if (err) {
-                    reject({ err });
-                    return;
-                }
-                resolve({ fields, files });
-            });
-        });
+        const { fields, files } = await parseForm(req);
+        console.log("Formulário processado com sucesso pelo Formidable.");
 
-        // O formidable organiza os ficheiros de forma diferente.
-        // Vamos juntá-los todos numa única lista para anexar.
-        const allFiles = [];
-        for (const fileArray of Object.values(data.files)) {
-             if (Array.isArray(fileArray)) {
-                allFiles.push(...fileArray);
-            } else {
-                allFiles.push(fileArray);
+        const attachments = [];
+
+        // [A MUDANÇA CRUCIAL ESTÁ AQUI]
+        // Processamos cada campo de ficheiro explicitamente para evitar conflitos.
+
+        // Processa as fotos
+        if (files.fotos) {
+            const photos = Array.isArray(files.fotos) ? files.fotos : [files.fotos];
+            for (const photo of photos) {
+                if (photo && photo.originalFilename) {
+                    attachments.push({
+                        filename: photo.originalFilename,
+                        content: fs.createReadStream(photo.filepath),
+                        contentType: photo.mimetype,
+                    });
+                }
+            }
+        }
+        
+        // Processa o áudio gravado
+        if (files.audio_gravado) {
+            const audio = Array.isArray(files.audio_gravado) ? files.audio_gravado[0] : files.audio_gravado;
+            if (audio && audio.originalFilename) {
+                 attachments.push({
+                    filename: audio.originalFilename,
+                    content: fs.createReadStream(audio.filepath),
+                    contentType: audio.mimetype,
+                });
+            }
+        }
+        
+        // Processa o áudio enviado
+        if (files.audio_enviado) {
+             const audio = Array.isArray(files.audio_enviado) ? files.audio_enviado[0] : files.audio_enviado;
+             if (audio && audio.originalFilename) {
+                 attachments.push({
+                    filename: audio.originalFilename,
+                    content: fs.createReadStream(audio.filepath),
+                    contentType: audio.mimetype,
+                });
             }
         }
 
-        const attachments = allFiles.map((file) => {
-            // Se o ficheiro não tiver um nome original, não o anexa.
-            if (!file || !file.originalFilename) return null;
-            
-            return {
-                filename: file.originalFilename,
-                // Lemos o ficheiro a partir do caminho temporário onde o formidable o guardou.
-                content: fs.createReadStream(file.filepath),
-                contentType: file.mimetype,
-            };
-        }).filter(Boolean); // Filtra quaisquer ficheiros nulos.
+        console.log(`Total de anexos preparados: ${attachments.length}`);
 
         // O resto da lógica para montar e enviar o e-mail permanece a mesma.
         let emailBody = '<h1>Novo Pedido do Portal de Criação! ✨</h1>';
-        for (const [key, value] of Object.entries(data.fields)) {
-             if (Array.isArray(value)) {
-                emailBody += `<p><strong>${key.replace(/_/g, ' ')}:</strong><br>${value.join(', ')}</p>`;
-            } else {
-                emailBody += `<p><strong>${key.replace(/_/g, ' ')}:</strong><br>${String(value).replace(/\n/g, '<br>')}</p>`;
-            }
+        for (const [key, value] of Object.entries(fields)) {
+            const fieldValue = Array.isArray(value) ? value[0] : value;
+            emailBody += `<p><strong>${key.replace(/_/g, ' ')}:</strong><br>${String(fieldValue).replace(/\n/g, '<br>')}</p>`;
         }
         emailBody += "<p>--<br>E-mail enviado automaticamente pelo Portal de Criação.</p>";
 
@@ -87,7 +110,7 @@ export default async function handler(req, res) {
         await transporter.sendMail({
             from: `"Portal de Criação" <${remetenteVerificado}>`,
             to: destinatario,
-            subject: `Novo Pedido de ${data.fields.nome_do_cliente || 'Cliente'} - Pacote ${data.fields.pacote_escolhido || ''}`,
+            subject: `Novo Pedido de ${fields.nome_do_cliente || 'Cliente'} - Pacote ${fields.pacote_escolhido || ''}`,
             html: emailBody,
             attachments: attachments,
         });
@@ -97,6 +120,8 @@ export default async function handler(req, res) {
 
     } catch (error) {
         console.error('ERRO GERAL NO BACKEND:', error);
-        return res.status(500).json({ message: `Ocorreu um erro no servidor: ${error.message}` });
+        // Garante que o objeto de erro é serializável
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        return res.status(500).json({ message: `Ocorreu um erro no servidor: ${errorMessage}` });
     }
 }
