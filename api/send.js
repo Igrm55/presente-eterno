@@ -1,4 +1,4 @@
-// api/send.js - VERSÃO COM CORREÇÃO DEFINITIVA
+// api/send.js - VERSÃO FINAL E ROBUSTA
 
 import Busboy from 'busboy';
 import nodemailer from 'nodemailer';
@@ -29,7 +29,14 @@ export default async function handler(req, res) {
         });
 
         busboy.on('file', (fieldname, file, filename) => {
-            console.log(`Recebendo arquivo: ${filename.filename}`);
+            // Se o ficheiro não tiver um nome (por exemplo, um blob de áudio gravado), ignora.
+            if (!filename.filename) {
+                console.log('Ficheiro sem nome ignorado.');
+                file.resume(); // Consome o stream para não bloquear o processo.
+                return;
+            }
+
+            console.log(`Recebendo ficheiro: ${filename.filename}`);
             fileUploads.push(
                 streamToBuffer(file).then(buffer => ({
                     fieldname,
@@ -47,7 +54,7 @@ export default async function handler(req, res) {
         });
         
         const files = await Promise.all(fileUploads);
-        console.log('Todos os arquivos foram processados.');
+        console.log('Todos os ficheiros foram processados.');
 
         const attachments = files.map(file => ({
             filename: file.filename,
@@ -66,26 +73,22 @@ export default async function handler(req, res) {
             port: process.env.EMAIL_PORT,
             secure: false,
             auth: {
-                user: process.env.EMAIL_USER, // <- Este é o LOGIN
+                user: process.env.EMAIL_USER,
                 pass: process.env.EMAIL_PASS,
             },
         });
         
         console.log('Enviando o e-mail com as novas configurações...');
         
-        // [A CORREÇÃO FINAL E DEFINITIVA ESTÁ AQUI!]
-        // Para eliminar qualquer problema com variáveis de ambiente, definimos o remetente diretamente no código.
-        // Use o e-mail que você VERIFICOU na Brevo (o seu Gmail ou Hotmail).
-        const remetenteVerificado = 'suportepresenteeterno@gmail.com';
+        const remetenteVerificado = process.env.EMAIL_FROM;
         const destinatario = process.env.EMAIL_TO;
 
-        // Uma verificação de segurança para garantir que o destinatário foi carregado.
-        if (!destinatario) {
-            throw new Error('A variável de ambiente EMAIL_TO não está configurada na Vercel.');
+        if (!destinatario || !remetenteVerificado) {
+            throw new Error('As variáveis de ambiente EMAIL_FROM ou EMAIL_TO não estão configuradas corretamente na Vercel.');
         }
 
         await transporter.sendMail({
-            from: `"Portal de Criação" <${remetenteVerificado}>`, // <- REMETENTE DEFINIDO DIRETAMENTE
+            from: `"Portal de Criação" <${remetenteVerificado}>`,
             to: destinatario,
             subject: `Novo Pedido de ${fields.nome_do_cliente || 'Cliente'} - Pacote ${fields.pacote_escolhido || ''}`,
             html: emailBody,
