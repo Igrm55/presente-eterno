@@ -1,4 +1,4 @@
-// api/send.js - VERSÃO FINAL COM MANUSEAMENTO UNIFICADO
+// api/send.js - VERSÃO FINAL COM LEITURA DE BUFFER EM MEMÓRIA
 
 import { formidable } from 'formidable';
 import nodemailer from 'nodemailer';
@@ -34,25 +34,30 @@ export default async function handler(req, res) {
 
         const attachments = [];
 
-        // [A MUDANÇA CRUCIAL ESTÁ AQUI]
-        // Agora, só precisamos de procurar por um campo: 'anexos'.
         if (files.anexos) {
-            // Garante que 'anexos' é sempre um array, mesmo que só venha um ficheiro.
             const fileArray = Array.isArray(files.anexos) ? files.anexos : [files.anexos];
             
             for (const file of fileArray) {
                 if (file && file.originalFilename) {
+                    // [A MUDANÇA MAIS IMPORTANTE]
+                    // Em vez de criar um stream a partir do disco, lemos o ficheiro diretamente para um buffer em memória.
+                    // Isto é muito mais rápido e evita o estouro de tempo em ambientes serverless.
+                    const fileBuffer = fs.readFileSync(file.filepath);
+                    
                     attachments.push({
                         filename: file.originalFilename,
-                        content: fs.createReadStream(file.filepath),
+                        content: fileBuffer, // Anexamos o buffer diretamente.
                         contentType: file.mimetype,
                     });
+
+                    // Removemos o ficheiro temporário imediatamente para limpar o espaço.
+                    fs.unlinkSync(file.filepath);
                 }
             }
         }
 
         console.log(`Total de anexos preparados: ${attachments.length}`);
-
+        
         let emailBody = '<h1>Novo Pedido do Portal de Criação! ✨</h1>';
         for (const [key, value] of Object.entries(fields)) {
             const fieldValue = Array.isArray(value) ? value[0] : value;
