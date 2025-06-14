@@ -780,8 +780,8 @@
             // Antes de enviar, temos de adicionar manualmente os ficheiros de imagem
             // da nossa lista 'selectedImageFiles' ao FormData.
             selectedImageFiles.forEach(file => {
-                // O primeiro argumento 'fotos' deve corresponder ao 'name' do input
-                formData.append('fotos', file, file.name);
+                // O primeiro argumento 'fotos[]' sinaliza um array de ficheiros.
+                formData.append('fotos[]', file, file.name);
             });
             
             if (audioFileToSubmit) {
