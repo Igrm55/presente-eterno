@@ -275,11 +275,8 @@
         <div id="form-content">
             <ul id="progress-bar"></ul>
             
-            <!-- [ALTERAÇÃO IMPORTANTE] O formulário agora aponta para o nosso backend e tem o 'enctype' para envio de arquivos. -->
             <form id="creation-form" action="/api/send" method="POST" enctype="multipart/form-data">
                 
-                <!-- [REMOVIDO] Campos ocultos para links de terceiros não são mais necessários. -->
-
                 <!-- Etapa 1: Boas-vindas e Pacote -->
                 <div class="form-step active" data-step-name="Início">
                     <div class="form-group">
@@ -359,7 +356,7 @@
                 
                         <button type="button" id="add-photo-btn" class="btn btn-secondary" style="margin-top: 1rem;"><i class="fas fa-plus"></i> Adicionar Fotos</button>
                         
-                        <!-- [ALTERAÇÃO IMPORTANTE] Adicionamos o atributo 'name' para o backend identificar os arquivos -->
+                        <!-- Este input está escondido, mas é usado para o utilizador selecionar os ficheiros. -->
                         <input type="file" id="fotos-input" name="fotos" accept="image/*" class="hidden" multiple>
                 
                         <input type="text" id="photo-validation-input" required style="display: none;">
@@ -395,7 +392,6 @@
                                 <i class="fas fa-upload"></i>
                                 <div>Ou clique para enviar um arquivo</div>
                             </div>
-                            <!-- [ALTERAÇÃO IMPORTANTE] Adicionamos o atributo 'name' para o backend identificar o arquivo de áudio -->
                             <input type="file" id="audio-input" name="audio_enviado" accept="audio/*">
                         </div>
                     </div>
@@ -433,8 +429,7 @@
                     <div id="confirmation-step" style="text-align: center;">
                         <i class="fas fa-paper-plane" style="font-size: 3rem; margin-bottom: 1rem; color: var(--cor-primaria);"></i>
                         <h2>Tudo Pronto para Enviar!</h2>
-                        <p>Suas informações e arquivos estão prontos. Clique no botão abaixo para finalizar e enviar seu pedido para mim.</p>
-                        <!-- A barra de progresso de upload foi removida pois o envio agora é único e direto -->
+                        <p>As suas informações e ficheiros estão prontos. Clique no botão abaixo para finalizar e enviar o seu pedido para mim.</p>
                     </div>
                 </div>
 
@@ -458,8 +453,6 @@
     </div>
     
     <script>
-    // [REMOVIDO] A chave da API do ImgBB não é mais necessária.
-    
     document.addEventListener('DOMContentLoaded', () => {
         
         const form = document.getElementById('creation-form');
@@ -476,7 +469,7 @@
         const fotosInput = document.getElementById('fotos-input');
         const imagePreviewContainer = document.getElementById('image-preview-container');
         const photoValidationInput = document.getElementById('photo-validation-input');
-        let selectedImageFiles = [];
+        let selectedImageFiles = []; // Usamos esta lista para gerir os previews.
 
         const recordBtn = document.getElementById('record-btn');
         const stopRecordBtn = document.getElementById('stop-record-btn');
@@ -495,9 +488,6 @@
         
         let currentStepIndex = 0;
         let visibleSteps = [];
-
-        // Nenhuma alteração necessária nas funções de UI (filterVisibleSteps, updateProgressBar, etc.)
-        // Elas continuam funcionando da mesma forma.
         
         function filterVisibleSteps() {
             const selectedPackageRadio = document.querySelector('input[name="pacote_escolhido"]:checked');
@@ -575,7 +565,7 @@
             
             if (currentStep.dataset.stepName === 'Sinfonia') {
                 if (!audioFileToSubmit && audioInput.files.length === 0) {
-                    showAlert('Áudio Obrigatório', 'Por favor, grave ou envie um arquivo de áudio para este pacote.');
+                    showAlert('Áudio Obrigatório', 'Por favor, grave ou envie um ficheiro de áudio para este pacote.');
                     return false;
                 }
             }
@@ -720,8 +710,8 @@
                 
                 mediaRecorder.start();
             } catch (err) {
-                console.error("Erro ao acessar o microfone:", err);
-                showAlert("Erro de Microfone", "Não foi possível acessar seu microfone. Verifique as permissões.");
+                console.error("Erro ao aceder ao microfone:", err);
+                showAlert("Erro de Microfone", "Não foi possível aceder ao seu microfone. Verifique as permissões.");
             }
         });
 
@@ -778,29 +768,30 @@
             playerSeekBar.style.setProperty('--seek-before-width', `${progressPercent}%`);
         });
         
-        // [ALTERAÇÃO IMPORTANTE] A função de envio foi totalmente substituída.
-        // Removemos toda a lógica de upload para ImgBB/GoFile.
-        // Agora, ela simplesmente cria um FormData e envia tudo de uma vez para o nosso backend.
         async function handleFormSubmit(event) {
             event.preventDefault();
             
             submitBtn.disabled = true;
-            submitBtn.innerHTML = 'Enviando... <i class="fas fa-spinner fa-spin"></i>';
+            submitBtn.innerHTML = 'A Enviar... <i class="fas fa-spinner fa-spin"></i>';
 
-            // FormData pega automaticamente todos os campos de texto e os arquivos dos inputs com `name`.
             const formData = new FormData(form);
 
-            // Adiciona o áudio gravado (se existir) ao FormData.
+            // [A CORREÇÃO FINAL ESTÁ AQUI!]
+            // Antes de enviar, temos de adicionar manualmente os ficheiros de imagem
+            // da nossa lista 'selectedImageFiles' ao FormData.
+            selectedImageFiles.forEach(file => {
+                // O primeiro argumento 'fotos' deve corresponder ao 'name' do input
+                formData.append('fotos', file, file.name);
+            });
+            
             if (audioFileToSubmit) {
-                // O backend vai identificar este arquivo como 'audio_gravado'.
                 formData.append('audio_gravado', audioFileToSubmit, audioFileToSubmit.name || 'gravacao.webm');
             }
 
             try {
-                // Envia TUDO de uma vez para o nosso backend.
-                const response = await fetch(form.action, { // form.action é '/api/send'
+                const response = await fetch(form.action, {
                     method: 'POST',
-                    body: formData, // O FormData é inteligente e se envia no formato correto (multipart/form-data)
+                    body: formData, 
                 });
                 
                 if (response.ok) {
@@ -825,10 +816,10 @@
             formContent.classList.add('hidden');
             finalMessageContainer.classList.remove('hidden');
             if(success) {
-                let message = `<i class="fas fa-check-circle success"></i><h2>Enviado com Sucesso!</h2><p>Suas informações foram recebidas. Em breve, entrarei em contato. Obrigado!</p>`;
+                let message = `<i class="fas fa-check-circle success"></i><h2>Enviado com Sucesso!</h2><p>As suas informações foram recebidas. Em breve, entrarei em contacto. Obrigado!</p>`;
                 finalMessageContainer.innerHTML = message;
             } else {
-                finalMessageContainer.innerHTML = `<i class="fas fa-times-circle error"></i><h2>Ocorreu um Erro</h2><p>Não foi possível enviar suas informações. Detalhe: ${errorMsg}</p><p>Por favor, tente novamente. Se o erro persistir, entre em contato.</p>`;
+                finalMessageContainer.innerHTML = `<i class="fas fa-times-circle error"></i><h2>Ocorreu um Erro</h2><p>Não foi possível enviar as suas informações. Detalhe: ${errorMsg}</p><p>Por favor, tente novamente. Se o erro persistir, entre em contacto.</p>`;
             }
         }
         
