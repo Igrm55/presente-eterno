@@ -11,6 +11,7 @@
   "description": "",
   "dependencies": {
     "busboy": "^1.6.0",
+    "formidable": "^3.5.4",
     "nodemailer": "^7.0.3"
   }
 }

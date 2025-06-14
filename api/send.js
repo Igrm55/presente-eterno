@@ -1,61 +1,16 @@
-// api/send.js - VERSÃO FINAL (ESTRUTURA ROBUSTA)
+// api/send.js - VERSÃO FINAL COM MOTOR FORMIDABLE
 
-import Busboy from 'busboy';
+// Importamos a nova biblioteca 'formidable' e o 'fs' para ler ficheiros.
+import { formidable } from 'formidable';
 import nodemailer from 'nodemailer';
+import fs from 'fs';
 
-// Função auxiliar para converter um stream para um buffer.
-const streamToBuffer = (stream) => {
-    return new Promise((resolve, reject) => {
-        const chunks = [];
-        stream.on('data', (chunk) => chunks.push(chunk));
-        stream.on('error', reject);
-        stream.on('end', () => resolve(Buffer.concat(chunks)));
-    });
+// Esta configuração é crucial para o formidable funcionar na Vercel.
+export const config = {
+    api: {
+        bodyParser: false,
+    },
 };
-
-// [NOVO] Função dedicada para processar o formulário.
-// Isto organiza o código e torna o manuseamento de streams mais seguro em ambientes serverless.
-const parseMultipartForm = (req) => {
-    return new Promise((resolve, reject) => {
-        const busboy = Busboy({ headers: req.headers });
-        const fields = {};
-        const fileUploads = [];
-
-        busboy.on('field', (fieldname, val) => {
-            fields[fieldname] = val;
-        });
-
-        busboy.on('file', (fieldname, file, filename) => {
-            // Ignora streams de ficheiros sem um nome de ficheiro real.
-            if (!filename.filename) {
-                file.resume();
-                return;
-            }
-            
-            fileUploads.push(
-                streamToBuffer(file).then(buffer => ({
-                    fieldname,
-                    buffer,
-                    filename: filename.filename,
-                    contentType: filename.mimeType,
-                }))
-            );
-        });
-
-        busboy.on('error', reject);
-        busboy.on('finish', async () => {
-            try {
-                const files = await Promise.all(fileUploads);
-                resolve({ fields, files });
-            } catch (error) {
-                reject(error);
-            }
-        });
-
-        req.pipe(busboy);
-    });
-};
-
 
 export default async function handler(req, res) {
     if (req.method !== 'POST') {
@@ -63,19 +18,50 @@ export default async function handler(req, res) {
     }
 
     try {
-        // Usa a nova função para processar o formulário.
-        const { fields, files } = await parseMultipartForm(req);
-        console.log('Formulário processado com sucesso.');
+        // [A GRANDE MUDANÇA ESTÁ AQUI]
+        // Usamos o 'formidable' para processar o formulário. Ele é muito mais robusto.
+        const data = await new Promise((resolve, reject) => {
+            const form = formidable({});
+            form.parse(req, (err, fields, files) => {
+                if (err) {
+                    reject({ err });
+                    return;
+                }
+                resolve({ fields, files });
+            });
+        });
 
-        const attachments = files.map(file => ({
-            filename: file.filename,
-            content: file.buffer,
-            contentType: file.contentType,
-        }));
-        
+        // O formidable organiza os ficheiros de forma diferente.
+        // Vamos juntá-los todos numa única lista para anexar.
+        const allFiles = [];
+        for (const fileArray of Object.values(data.files)) {
+             if (Array.isArray(fileArray)) {
+                allFiles.push(...fileArray);
+            } else {
+                allFiles.push(fileArray);
+            }
+        }
+
+        const attachments = allFiles.map((file) => {
+            // Se o ficheiro não tiver um nome original, não o anexa.
+            if (!file || !file.originalFilename) return null;
+            
+            return {
+                filename: file.originalFilename,
+                // Lemos o ficheiro a partir do caminho temporário onde o formidable o guardou.
+                content: fs.createReadStream(file.filepath),
+                contentType: file.mimetype,
+            };
+        }).filter(Boolean); // Filtra quaisquer ficheiros nulos.
+
+        // O resto da lógica para montar e enviar o e-mail permanece a mesma.
         let emailBody = '<h1>Novo Pedido do Portal de Criação! ✨</h1>';
-        for (const [key, value] of Object.entries(fields)) {
-            emailBody += `<p><strong>${key.replace(/_/g, ' ')}:</strong><br>${value.replace(/\n/g, '<br>')}</p>`;
+        for (const [key, value] of Object.entries(data.fields)) {
+             if (Array.isArray(value)) {
+                emailBody += `<p><strong>${key.replace(/_/g, ' ')}:</strong><br>${value.join(', ')}</p>`;
+            } else {
+                emailBody += `<p><strong>${key.replace(/_/g, ' ')}:</strong><br>${String(value).replace(/\n/g, '<br>')}</p>`;
+            }
         }
         emailBody += "<p>--<br>E-mail enviado automaticamente pelo Portal de Criação.</p>";
 
@@ -101,7 +87,7 @@ export default async function handler(req, res) {
         await transporter.sendMail({
             from: `"Portal de Criação" <${remetenteVerificado}>`,
             to: destinatario,
-            subject: `Novo Pedido de ${fields.nome_do_cliente || 'Cliente'} - Pacote ${fields.pacote_escolhido || ''}`,
+            subject: `Novo Pedido de ${data.fields.nome_do_cliente || 'Cliente'} - Pacote ${data.fields.pacote_escolhido || ''}`,
             html: emailBody,
             attachments: attachments,
         });
@@ -114,9 +100,3 @@ export default async function handler(req, res) {
         return res.status(500).json({ message: `Ocorreu um erro no servidor: ${error.message}` });
     }
 }
-
-export const config = {
-    api: {
-        bodyParser: false,
-    },
-};
