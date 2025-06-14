@@ -1,8 +1,9 @@
-// api/send.js - VERSÃO FINAL E ROBUSTA
+// api/send.js - VERSÃO FINAL (ESTRUTURA ROBUSTA)
 
 import Busboy from 'busboy';
 import nodemailer from 'nodemailer';
 
+// Função auxiliar para converter um stream para um buffer.
 const streamToBuffer = (stream) => {
     return new Promise((resolve, reject) => {
         const chunks = [];
@@ -12,31 +13,25 @@ const streamToBuffer = (stream) => {
     });
 };
 
-export default async function handler(req, res) {
-    if (req.method !== 'POST') {
-        return res.status(405).json({ message: 'Apenas o método POST é permitido' });
-    }
-
-    try {
+// [NOVO] Função dedicada para processar o formulário.
+// Isto organiza o código e torna o manuseamento de streams mais seguro em ambientes serverless.
+const parseMultipartForm = (req) => {
+    return new Promise((resolve, reject) => {
         const busboy = Busboy({ headers: req.headers });
-
         const fields = {};
         const fileUploads = [];
 
         busboy.on('field', (fieldname, val) => {
-            console.log(`Campo de texto recebido: ${fieldname}`);
             fields[fieldname] = val;
         });
 
         busboy.on('file', (fieldname, file, filename) => {
-            // Se o ficheiro não tiver um nome (por exemplo, um blob de áudio gravado), ignora.
+            // Ignora streams de ficheiros sem um nome de ficheiro real.
             if (!filename.filename) {
-                console.log('Ficheiro sem nome ignorado.');
-                file.resume(); // Consome o stream para não bloquear o processo.
+                file.resume();
                 return;
             }
-
-            console.log(`Recebendo ficheiro: ${filename.filename}`);
+            
             fileUploads.push(
                 streamToBuffer(file).then(buffer => ({
                     fieldname,
@@ -47,14 +42,30 @@ export default async function handler(req, res) {
             );
         });
 
-        await new Promise((resolve, reject) => {
-            busboy.on('finish', resolve);
-            busboy.on('error', reject);
-            req.pipe(busboy);
+        busboy.on('error', reject);
+        busboy.on('finish', async () => {
+            try {
+                const files = await Promise.all(fileUploads);
+                resolve({ fields, files });
+            } catch (error) {
+                reject(error);
+            }
         });
-        
-        const files = await Promise.all(fileUploads);
-        console.log('Todos os ficheiros foram processados.');
+
+        req.pipe(busboy);
+    });
+};
+
+
+export default async function handler(req, res) {
+    if (req.method !== 'POST') {
+        return res.status(405).json({ message: 'Apenas o método POST é permitido' });
+    }
+
+    try {
+        // Usa a nova função para processar o formulário.
+        const { fields, files } = await parseMultipartForm(req);
+        console.log('Formulário processado com sucesso.');
 
         const attachments = files.map(file => ({
             filename: file.filename,
@@ -66,7 +77,7 @@ export default async function handler(req, res) {
         for (const [key, value] of Object.entries(fields)) {
             emailBody += `<p><strong>${key.replace(/_/g, ' ')}:</strong><br>${value.replace(/\n/g, '<br>')}</p>`;
         }
-        emailBody += "<p>--<br>E-mail enviado automaticamente pelo Portal de Criação.</p>"
+        emailBody += "<p>--<br>E-mail enviado automaticamente pelo Portal de Criação.</p>";
 
         const transporter = nodemailer.createTransport({
             host: process.env.EMAIL_HOST,
@@ -78,7 +89,7 @@ export default async function handler(req, res) {
             },
         });
         
-        console.log('Enviando o e-mail com as novas configurações...');
+        console.log('A enviar o e-mail...');
         
         const remetenteVerificado = process.env.EMAIL_FROM;
         const destinatario = process.env.EMAIL_TO;
