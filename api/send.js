@@ -1,4 +1,4 @@
-// api/send.js - VERSÃO CORRIGIDA
+// api/send.js - VERSÃO COM CORREÇÃO DEFINITIVA
 
 import Busboy from 'busboy';
 import nodemailer from 'nodemailer';
@@ -72,12 +72,21 @@ export default async function handler(req, res) {
         });
         
         console.log('Enviando o e-mail com as novas configurações...');
+        
+        // [A CORREÇÃO FINAL E DEFINITIVA ESTÁ AQUI!]
+        // Para eliminar qualquer problema com variáveis de ambiente, definimos o remetente diretamente no código.
+        // Use o e-mail que você VERIFICOU na Brevo (o seu Gmail ou Hotmail).
+        const remetenteVerificado = 'suportepresenteeterno@gmail.com';
+        const destinatario = process.env.EMAIL_TO;
+
+        // Uma verificação de segurança para garantir que o destinatário foi carregado.
+        if (!destinatario) {
+            throw new Error('A variável de ambiente EMAIL_TO não está configurada na Vercel.');
+        }
+
         await transporter.sendMail({
-            // [A GRANDE CORREÇÃO ESTÁ AQUI!]
-            // Agora usamos a variável EMAIL_FROM, que é um remetente verificado,
-            // em vez de usar o e-mail de login.
-            from: `"Portal de Criação" <${process.env.EMAIL_FROM}>`, // <- Este é o REMETENTE
-            to: process.env.EMAIL_TO,
+            from: `"Portal de Criação" <${remetenteVerificado}>`, // <- REMETENTE DEFINIDO DIRETAMENTE
+            to: destinatario,
             subject: `Novo Pedido de ${fields.nome_do_cliente || 'Cliente'} - Pacote ${fields.pacote_escolhido || ''}`,
             html: emailBody,
             attachments: attachments,
