@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Presente Eterno - Portal de Criação</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Montserrat:wght@700&display=swap" rel="stylesheet">
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <style>
+        :root {
+            --cor-fundo: #0a101f;
+            --cor-primaria: #ff0080;
+            --cor-secundaria: #ff69b4;
+            --cor-dourado-premium: #FFD700;
+            --cor-laco-amor: #cba3ff;
+            --cor-branco-puro: #ffffff;
+            --cor-branco-suave: #e0e7ef;
+            --cor-cinza-claro: #b0bac9;
+            --cor-fundo-card: rgba(30, 41, 59, 0.8);
+            --borda-raio: 16px;
+            --gradiente-principal: linear-gradient(90deg, var(--cor-primaria), var(--cor-secundaria));
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--cor-fundo);
+            color: var(--cor-branco-suave);
+            line-height: 1.7;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 2rem;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60' viewBox='0 0 60 60'%3E%3Cpath d='M30 52.5 L12.5 35 Q12.5 17.5 30 25 Q47.5 17.5 47.5 35 Z' fill='rgba(160,0,255,0.03)'/%3E%3C/svg%3E");
+        }
+
+        #form-container {
+            width: 100%;
+            max-width: 700px;
+            background: var(--cor-fundo-card);
+            backdrop-filter: blur(10px);
+            border-radius: var(--borda-raio);
+            padding: clamp(1.5rem, 5vw, 2.5rem);
+            border: 1px solid var(--cor-secundaria);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .form-header { text-align: center; margin-bottom: 2rem; }
+        .form-header h1 { font-family: 'Montserrat', sans-serif; font-size: clamp(1.8rem, 5vw, 2.2rem); color: var(--cor-branco-puro); margin-bottom: 0.5rem; }
+        .form-header p { color: var(--cor-cinza-claro); font-size: 1rem; max-width: 500px; margin: auto; }
+        .congrats-message { background: rgba(255, 215, 0, 0.1); border-left: 4px solid var(--cor-dourado-premium); padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; text-align: left; }
+        .congrats-message strong { color: var(--cor-dourado-premium); }
+
+        #progress-bar { display: flex; list-style: none; margin-bottom: 2rem; position: relative; justify-content: space-between; }
+        #progress-bar .step { text-align: center; position: relative; width: 100%; color: var(--cor-cinza-claro); font-weight: 500; font-size: 0.8rem; }
+        #progress-bar .step .dot { height: 25px; width: 25px; border: 2px solid var(--cor-cinza-claro); border-radius: 50%; display: inline-block; margin-bottom: 5px; transition: all 0.4s ease; }
+        #progress-bar .step.active .dot, #progress-bar .step.completed .dot { background: var(--gradiente-principal); border-color: var(--cor-primaria); transform: scale(1.2); }
+        #progress-bar .step.active, #progress-bar .step.completed { color: var(--cor-branco-puro); }
+        #progress-bar::before, #progress-line { content: ''; position: absolute; top: 12px; left: 0; height: 3px; width: 100%; background: var(--cor-cinza-claro); z-index: -1; }
+        #progress-line { background: var(--gradiente-principal); width: 0%; transition: width 0.4s ease; }
+
+        .form-step { display: none; animation: fadeIn 0.5s ease-in-out; }
+        .form-step.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        .form-group { margin-bottom: 1.5rem; }
+        .form-group label { display: block; margin-bottom: 0.75rem; font-weight: 600; font-size: 1.1rem; color: var(--cor-branco-suave); }
+        .form-group small { display: block; color: var(--cor-cinza-claro); font-size: 0.85rem; margin-top: -0.5rem; margin-bottom: 0.75rem; }
+
+        input[type="text"], textarea, select {
+            width: 100%; padding: 0.9rem; border-radius: 8px; border: 1px solid var(--cor-cinza-claro); background-color: var(--cor-fundo); color: var(--cor-branco-puro); font-size: 1rem; font-family: 'Poppins', sans-serif; transition: all 0.3s ease;
+        }
+        input:focus, textarea:focus, select:focus { outline: none; border-color: var(--cor-primaria); box-shadow: 0 0 10px var(--cor-primaria); }
+        textarea { resize: vertical; min-height: 120px; }
+
+        .package-selection { display: grid; grid-template-columns: 1fr; gap: 1rem; }
+        @media (min-width: 600px) { .package-selection { grid-template-columns: repeat(3, 1fr); } }
+        .package-option { position: relative; }
+        .package-option input[type="radio"] { opacity: 0; position: absolute; width: 100%; height: 100%; cursor: pointer; }
+        .package-label { display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--cor-fundo); border: 2px solid var(--cor-cinza-claro); border-radius: var(--borda-raio); padding: 1.5rem 1rem; text-align: center; transition: all 0.3s ease; height: 100%; }
+        .package-label i { font-size: 2.5rem; margin-bottom: 0.75rem; transition: all 0.3s ease; }
+        .package-label .package-name { font-weight: 700; color: var(--cor-branco-puro); }
+        .package-option input:checked + .package-label { border-color: var(--cor-primaria); box-shadow: 0 0 15px var(--cor-primaria); transform: translateY(-5px); }
+        .package-option input:checked + .package-label i { transform: scale(1.1); }
+        #laco-label i { color: var(--cor-laco-amor); }
+        #sinfonia-label i { color: var(--cor-primaria); }
+        #universo-label i { color: var(--cor-dourado-premium); }
+        .package-option input:checked + #sinfonia-label i { background: var(--gradiente-principal); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+        .file-upload-wrapper { position: relative; overflow: hidden; display: inline-block; width: 100%; }
+        .file-upload-btn { border: 2px dashed var(--cor-cinza-claro); background-color: var(--cor-fundo); color: var(--cor-cinza-claro); padding: 2rem; border-radius: var(--borda-raio); cursor: pointer; transition: all 0.3s ease; text-align: center; }
+        .file-upload-btn i { font-size: 2rem; margin-bottom: 0.5rem; }
+        input[type=file] { font-size: 100px; position: absolute; left: 0; top: 0; opacity: 0; cursor: pointer; height: 100%; width: 100%; }
+        .file-upload-wrapper:hover .file-upload-btn { border-color: var(--cor-primaria); color: var(--cor-branco-puro); }
+        .file-upload-status { margin-top: 1rem; text-align: center; color: var(--cor-dourado-premium); font-weight: 500; }
+
+        .btn-group { display: flex; justify-content: space-between; margin-top: 2rem; gap: 1rem; flex-wrap: wrap; }
+        .btn { padding: 0.9rem 2rem; border: none; border-radius: 50px; font-size: 1rem; font-weight: 700; cursor: pointer; transition: all 0.3s ease; text-transform: uppercase; }
+        .btn-primary { background: var(--gradiente-principal); background-size: 200% auto; color: var(--cor-branco-puro); }
+        .btn-primary:hover { transform: scale(1.05); background-position: right center; box-shadow: 0 5px 15px var(--cor-primaria); }
+        .btn-secondary { background-color: transparent; border: 2px solid var(--cor-cinza-claro); color: var(--cor-cinza-claro); }
+        .btn-secondary:hover { border-color: var(--cor-branco-suave); color: var(--cor-branco-suave); }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        
+        .hidden { display: none; }
+        
+        #final-message { text-align: center; }
+        #final-message i { font-size: 4rem; margin-bottom: 1rem; }
+        #final-message .success { color: var(--cor-dourado-premium); }
+        #final-message .error { color: #FF4D4D; }
+        #final-message h2 { margin-bottom: 1rem; }
+
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(5px); display: flex; justify-content: center; align-items: center; z-index: 1000; opacity: 0; visibility: hidden; transition: all 0.3s ease-in-out; }
+        .modal-overlay.visible { opacity: 1; visibility: visible; }
+        .modal-content { background: var(--cor-fundo-card); padding: 2rem; border-radius: var(--borda-raio); border: 1px solid var(--cor-primaria); box-shadow: 0 0 30px rgba(255, 0, 128, 0.4); text-align: center; max-width: 400px; width: 90%; transform: scale(0.9); transition: transform 0.3s ease-in-out; }
+        .modal-overlay.visible .modal-content { transform: scale(1); }
+        .modal-content h2 { margin-bottom: 1rem; color: var(--cor-branco-puro); }
+        .modal-content p { color: var(--cor-cinza-claro); margin-bottom: 1.5rem; }
+        .modal-close-btn { background: var(--gradiente-principal); color: var(--cor-branco-puro); border: none; padding: 0.8rem 2rem; border-radius: 50px; cursor: pointer; font-weight: 700; transition: transform 0.2s; }
+        .modal-close-btn:hover { transform: scale(1.05); }
+
+        /* Estilos para o gravador de áudio */
+        .audio-recorder { background: var(--cor-fundo); border: 1px solid var(--cor-cinza-claro); border-radius: var(--borda-raio); padding: 1.5rem; margin-top: 1.5rem; text-align: center; }
+        .audio-recorder-buttons { display: flex; justify-content: center; align-items: center; gap: 1rem; margin-bottom: 1rem; }
+        #record-status { font-weight: 500; color: var(--cor-dourado-premium); margin-bottom: 1rem; }
+        #record-status .recording-dot { display: inline-block; width: 10px; height: 10px; background-color: #ff4d4d; border-radius: 50%; animation: blink 1.5s infinite; margin-right: 8px; }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+        
+        #custom-audio-player {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-top: 1rem;
+            background: linear-gradient(to right, rgba(30, 41, 59, 0.5), rgba(51, 65, 85, 0.5));
+            padding: 0.75rem;
+            border-radius: 50px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+        }
+        #player-play-btn {
+            background: var(--gradiente-principal);
+            border: none;
+            color: white;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.1rem;
+            flex-shrink: 0;
+            transition: transform 0.2s ease;
+        }
+        #player-play-btn:hover {
+            transform: scale(1.1);
+        }
+        #player-seek-bar {
+            --seek-before-width: 0%;
+            flex-grow: 1;
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 6px;
+            background: var(--cor-cinza-claro);
+            outline: none;
+            border-radius: 10px;
+            cursor: pointer;
+            position: relative;
+            background: linear-gradient(to right, var(--cor-primaria) 0%, var(--cor-secundaria) var(--seek-before-width), var(--cor-cinza-claro) var(--seek-before-width), var(--cor-cinza-claro) 100%);
+        }
+        #player-seek-bar::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            background: var(--cor-branco-puro);
+            border-radius: 50%;
+            cursor: pointer;
+            border: 3px solid var(--cor-secundaria);
+            transition: background-color 0.2s;
+        }
+        #player-seek-bar::-moz-range-thumb {
+            width: 15px;
+            height: 15px;
+            background: var(--cor-branco-puro);
+            border-radius: 50%;
+            cursor: pointer;
+            border: 3px solid var(--cor-secundaria);
+        }
+        #player-seek-bar:hover::-webkit-slider-thumb {
+            background: #f0f0f0;
+        }
+
+        .player-time {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--cor-branco-suave);
+            min-width: 45px;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+        }
+        audio#audio-playback-element { display: none; }
+
+
+        #image-preview-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+            border: 2px dashed var(--cor-cinza-claro);
+            border-radius: var(--borda-raio);
+            padding: 1rem;
+            min-height: 142px;
+        }
+        .image-preview-item {
+            position: relative;
+            width: 100%;
+            padding-top: 100%; 
+            border-radius: 8px;
+            overflow: hidden;
+            background-color: var(--cor-fundo);
+        }
+        .image-preview-item img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .remove-image-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            width: 25px;
+            height: 25px;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            font-size: 14px;
+            line-height: 1;
+            transition: background-color 0.2s, transform 0.2s;
+            z-index: 2;
+        }
+        .remove-image-btn:hover {
+            background-color: var(--cor-primaria);
+            transform: scale(1.1);
+        }
+        #add-photo-btn {
+            width: 100%;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div id="form-container">
+        <div class="form-header">
+            <h1>Portal de Criação</h1>
+            <p>Vamos dar vida à sua história! Siga os passos abaixo com carinho para construirmos uma memória inesquecível.</p>
+        </div>
+
+        <div id="form-content">
+            <ul id="progress-bar"></ul>
+            
+            <!-- [ALTERAÇÃO IMPORTANTE] O formulário agora aponta para o nosso backend e tem o 'enctype' para envio de arquivos. -->
+            <form id="creation-form" action="/api/send" method="POST" enctype="multipart/form-data">
+                
+                <!-- [REMOVIDO] Campos ocultos para links de terceiros não são mais necessários. -->
+
+                <!-- Etapa 1: Boas-vindas e Pacote -->
+                <div class="form-step active" data-step-name="Início">
+                    <div class="form-group">
+                        <div class="congrats-message">
+                            <strong>Parabéns pela escolha magnífica!</strong> Você deu o primeiro passo para criar um presente que transcende o material e toca a alma. Estamos honrados em fazer parte disso.
+                        </div>
+                        <label for="nome">Seu primeiro nome</label>
+                        <input type="text" id="nome" name="nome_do_cliente" required placeholder="Ex: Igor">
+                    </div>
+                    <div class="form-group">
+                        <label>Qual pacote você adquiriu?</label>
+                        <div class="package-selection">
+                            <div class="package-option">
+                                <input type="radio" id="laco" name="pacote_escolhido" value="Laço de Amor" required>
+                                <label for="laco" class="package-label" id="laco-label">
+                                    <i class="fa-solid fa-ribbon"></i>
+                                    <span class="package-name">Laço de Amor</span>
+                                </label>
+                            </div>
+                            <div class="package-option">
+                                <input type="radio" id="sinfonia" name="pacote_escolhido" value="Nossa Sinfonia" required>
+                                <label for="sinfonia" class="package-label" id="sinfonia-label">
+                                    <i class="fa-solid fa-music"></i>
+                                    <span class="package-name">Nossa Sinfonia</span>
+                                </label>
+                            </div>
+                            <div class="package-option">
+                                <input type="radio" id="universo" name="pacote_escolhido" value="Universo Particular" required>
+                                <label for="universo" class="package-label" id="universo-label">
+                                    <i class="fa-solid fa-meteor"></i>
+                                    <span class="package-name">Universo Particular</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Etapa 2: A História -->
+                <div class="form-step" data-step-name="História" data-packages="laco,sinfonia,universo">
+                    <div class="form-group">
+                        <label for="historia">A História de Vocês</label>
+                        <small>Conte-me um pouco sobre vocês. Como se conheceram? Qual a memória mais engraçada ou emocionante? Detalhes, apelidos, piadas internas... tudo isso me ajuda a criar algo verdadeiramente único.</small>
+                        <textarea id="historia" name="historia_do_casal" required></textarea>
+                    </div>
+                </div>
+
+                <!-- Etapa 3: Paleta de Cores -->
+                <div class="form-step" data-step-name="Cores" data-packages="laco,sinfonia,universo">
+                    <div class="form-group">
+                        <label for="paleta">Universo Visual e Cores</label>
+                        <small>Descreva o estilo visual que você imagina. É algo mais romântico com tons de rosa? Sofisticado com dourado e preto? Vibrante e colorido? Sinta-se à vontade para descrever.</small>
+                        <textarea id="paleta" name="paleta_de_cores" required placeholder="Ex: Gosto de um visual mais clean e elegante, com tons de azul marinho, branco e detalhes em dourado..."></textarea>
+                    </div>
+                </div>
+
+                <!-- Etapa 4: Essência -->
+                <div class="form-step" data-step-name="Essência" data-packages="laco,sinfonia,universo">
+                    <div class="form-group">
+                        <label for="carta">Sua Declaração (A Carta)</label>
+                        <small>Escreva ou cole aqui o texto que será o coração do presente.</small>
+                        <textarea id="carta" name="carta_de_declaracao"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="data-inicio">Data de Início do Relacionamento</label>
+                        <small>Para o contador de tempo. Pode escrever como preferir (ex: 25/12/2020).</small>
+                        <input type="text" id="data-inicio" name="data_de_inicio" placeholder="DD/MM/AAAA">
+                    </div>
+                </div>
+
+                <!-- Etapa 5: Memórias (Uploads) -->
+                <div class="form-step" data-step-name="Memórias" data-packages="laco,sinfonia,universo">
+                    <div class="form-group">
+                        <label>Galeria de Momentos</label>
+                        <small>Adicione as fotos que marcaram a história de vocês. Máximo de 5 para 'Laço de Amor' e 10 para os demais.</small>
+                        
+                        <div id="image-preview-container"></div>
+                
+                        <button type="button" id="add-photo-btn" class="btn btn-secondary" style="margin-top: 1rem;"><i class="fas fa-plus"></i> Adicionar Fotos</button>
+                        
+                        <!-- [ALTERAÇÃO IMPORTANTE] Adicionamos o atributo 'name' para o backend identificar os arquivos -->
+                        <input type="file" id="fotos-input" name="fotos" accept="image/*" class="hidden" multiple>
+                
+                        <input type="text" id="photo-validation-input" required style="display: none;">
+                    </div>
+                </div>
+                
+                <!-- Etapa 6: Itens da Sinfonia -->
+                <div class="form-step" data-step-name="Sinfonia" data-packages="sinfonia,universo">
+                    <div class="form-group">
+                        <label>Sua Voz Declarando Seu Amor</label>
+                        <small>Escolha uma das opções: grave um áudio na hora ou envie um arquivo de áudio pronto.</small>
+                        
+                        <div class="audio-recorder">
+                            <div id="record-status" class="hidden"></div>
+                            <div class="audio-recorder-buttons">
+                                <button type="button" class="btn btn-secondary" id="record-btn"><i class="fas fa-microphone-alt"></i> Gravar</button>
+                                <button type="button" class="btn btn-primary hidden" id="stop-record-btn"><i class="fas fa-stop-circle"></i> Parar</button>
+                            </div>
+                            <audio id="audio-playback-element"></audio>
+
+                            <div id="custom-audio-player" class="hidden">
+                                <button type="button" id="player-play-btn" class="btn"><i class="fas fa-play"></i></button>
+                                <span id="player-current-time" class="player-time">0:00</span>
+                                <input type="range" id="player-seek-bar" value="0" step="1">
+                                <span id="player-duration" class="player-time">0:00</span>
+                            </div>
+
+                            <div class="file-upload-status" id="audio-upload-status"></div>
+                        </div>
+
+                        <div class="file-upload-wrapper" style="margin-top: 1rem;">
+                            <div class="file-upload-btn">
+                                <i class="fas fa-upload"></i>
+                                <div>Ou clique para enviar um arquivo</div>
+                            </div>
+                            <!-- [ALTERAÇÃO IMPORTANTE] Adicionamos o atributo 'name' para o backend identificar o arquivo de áudio -->
+                            <input type="file" id="audio-input" name="audio_enviado" accept="audio/*">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>10 Mensagens Secretas para os Corações</label>
+                        <small>Escreva frases curtas e carinhosas.</small>
+                        <textarea name="mensagens_secretas_para_coracoes" rows="5" placeholder="Escreva uma mensagem por linha..."></textarea>
+                    </div>
+                </div>
+                
+                <!-- Etapa 7: Itens do Universo -->
+                <div class="form-step" data-step-name="Universo" data-packages="universo">
+                    <div class="form-group">
+                        <label>Playlist (Até 5 músicas)</label>
+                        <small>Cole o link do Spotify ou YouTube de cada música, um por linha.</small>
+                         <textarea name="playlist_links" rows="5" placeholder="Link da Música 1&#10;Link da Música 2..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Mensagem Secreta com Senha</label>
+                        <input type="text" name="senha_da_mensagem_secreta" placeholder="Crie uma senha (Ex: apelido, data especial)"><textarea name="texto_da_mensagem_secreta" placeholder="Escreva aqui a mensagem super secreta" style="margin-top: 0.5rem;"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Mapa Astral do Casal</label>
+                        <small>Precisamos dos signos para criar a mágica.</small>
+                        <input type="text" name="signo_1" placeholder="Signo da Pessoa 1 (Ex: Áries)" style="margin-bottom: 0.5rem;"><input type="text" name="signo_2" placeholder="Signo da Pessoa 2 (Ex: Touro)" style="margin-bottom: 0.5rem;">
+                    </div>
+                    <div class="form-group">
+                        <label for="pedido">Este presente é um pedido especial?</label>
+                        <select id="pedido" name="e_um_pedido_especial"><option value="nao">Não</option><option value="sim">Sim, é um pedido de namoro/casamento!</option></select>
+                    </div>
+                </div>
+
+                <!-- Etapa Final: Confirmação -->
+                <div class="form-step" data-step-name="Enviar">
+                    <div id="confirmation-step" style="text-align: center;">
+                        <i class="fas fa-paper-plane" style="font-size: 3rem; margin-bottom: 1rem; color: var(--cor-primaria);"></i>
+                        <h2>Tudo Pronto para Enviar!</h2>
+                        <p>Suas informações e arquivos estão prontos. Clique no botão abaixo para finalizar e enviar seu pedido para mim.</p>
+                        <!-- A barra de progresso de upload foi removida pois o envio agora é único e direto -->
+                    </div>
+                </div>
+
+                <div class="btn-group">
+                    <button type="button" class="btn btn-secondary" id="prev-btn">Voltar</button>
+                    <button type="button" class="btn btn-primary" id="next-btn">Avançar</button>
+                    <button type="submit" class="btn btn-primary hidden" id="submit-btn">Enviar Pedido</button>
+                </div>
+            </form>
+        </div>
+        <div id="final-message" class="hidden"></div>
+    </div>
+    
+    <!-- Modal de Alerta -->
+    <div id="alert-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h2 id="modal-title">Atenção</h2>
+            <p id="modal-message">Mensagem de alerta.</p>
+            <button id="modal-close" class="modal-close-btn">Entendi</button>
+        </div>
+    </div>
+    
+    <script>
+    // [REMOVIDO] A chave da API do ImgBB não é mais necessária.
+    
+    document.addEventListener('DOMContentLoaded', () => {
+        
+        const form = document.getElementById('creation-form');
+        const formContent = document.getElementById('form-content');
+        const finalMessageContainer = document.getElementById('final-message');
+        const formSteps = Array.from(document.querySelectorAll('.form-step'));
+        const nextBtn = document.getElementById('next-btn');
+        const prevBtn = document.getElementById('prev-btn');
+        const submitBtn = document.getElementById('submit-btn');
+        const progressBar = document.getElementById('progress-bar');
+        const packageOptions = document.querySelectorAll('input[name="pacote_escolhido"]');
+
+        const addPhotoBtn = document.getElementById('add-photo-btn');
+        const fotosInput = document.getElementById('fotos-input');
+        const imagePreviewContainer = document.getElementById('image-preview-container');
+        const photoValidationInput = document.getElementById('photo-validation-input');
+        let selectedImageFiles = [];
+
+        const recordBtn = document.getElementById('record-btn');
+        const stopRecordBtn = document.getElementById('stop-record-btn');
+        const recordStatus = document.getElementById('record-status');
+        const audioInput = document.getElementById('audio-input');
+        const audioUploadStatus = document.getElementById('audio-upload-status');
+        const audioPlaybackElement = document.getElementById('audio-playback-element');
+        const customAudioPlayer = document.getElementById('custom-audio-player');
+        const playerPlayBtn = document.getElementById('player-play-btn');
+        const playerSeekBar = document.getElementById('player-seek-bar');
+        const playerCurrentTime = document.getElementById('player-current-time');
+        const playerDuration = document.getElementById('player-duration');
+        let mediaRecorder;
+        let audioChunks = [];
+        let audioFileToSubmit = null;
+        
+        let currentStepIndex = 0;
+        let visibleSteps = [];
+
+        // Nenhuma alteração necessária nas funções de UI (filterVisibleSteps, updateProgressBar, etc.)
+        // Elas continuam funcionando da mesma forma.
+        
+        function filterVisibleSteps() {
+            const selectedPackageRadio = document.querySelector('input[name="pacote_escolhido"]:checked');
+            if (!selectedPackageRadio) {
+                visibleSteps = [formSteps[0]];
+                return;
+            }
+            const selectedPackageValue = selectedPackageRadio.id; 
+            
+            visibleSteps = [formSteps[0]];
+            formSteps.forEach(step => {
+                const packages = step.dataset.packages;
+                const isFinalStep = step.dataset.stepName === 'Enviar';
+                if (packages && packages.split(',').includes(selectedPackageValue) && !isFinalStep) {
+                    visibleSteps.push(step);
+                }
+            });
+            visibleSteps.push(formSteps.find(step => step.dataset.stepName === 'Enviar'));
+            updateProgressBar();
+        }
+
+        function updateProgressBar() {
+            progressBar.innerHTML = '';
+            visibleSteps.forEach(step => {
+                const stepName = step.dataset.stepName;
+                const li = document.createElement('li');
+                li.className = 'step';
+                li.innerHTML = `<span class="dot"></span> ${stepName}`;
+                progressBar.appendChild(li);
+            });
+            const progressLine = document.createElement('div');
+            progressLine.id = 'progress-line';
+            progressBar.appendChild(progressLine);
+            updateProgressClasses();
+        }
+
+        function updateProgressClasses() {
+            const progressSteps = progressBar.querySelectorAll('.step');
+            const progressLine = document.getElementById('progress-line');
+            progressSteps.forEach((step, index) => {
+                step.classList.remove('active', 'completed');
+                if (index < currentStepIndex) step.classList.add('completed');
+                else if (index === currentStepIndex) step.classList.add('active');
+            });
+            const completedDots = progressBar.querySelectorAll('.completed');
+            const widthPercentage = progressSteps.length > 1 ? (completedDots.length / (progressSteps.length - 1)) * 100 : 0;
+            if(progressLine) progressLine.style.width = `${widthPercentage}%`;
+        }
+
+        function showStep(stepIndex) {
+            formSteps.forEach(step => step.classList.remove('active'));
+            if(visibleSteps[stepIndex]) {
+                 visibleSteps[stepIndex].classList.add('active');
+            }
+            updateButtonVisibility();
+            updateProgressClasses();
+        }
+
+        function updateButtonVisibility() {
+            prevBtn.classList.toggle('hidden', currentStepIndex === 0);
+            nextBtn.classList.toggle('hidden', currentStepIndex === visibleSteps.length - 1);
+            submitBtn.classList.toggle('hidden', currentStepIndex !== visibleSteps.length - 1);
+        }
+
+        function validateCurrentStep() {
+            const currentStep = visibleSteps[currentStepIndex];
+            if (!currentStep) return false;
+            
+            if (currentStep.dataset.stepName === 'Memórias') {
+                 if (selectedImageFiles.length === 0) {
+                     showAlert('Fotos Obrigatórias', 'Por favor, adicione pelo menos uma foto.');
+                     return false;
+                 }
+            }
+            
+            if (currentStep.dataset.stepName === 'Sinfonia') {
+                if (!audioFileToSubmit && audioInput.files.length === 0) {
+                    showAlert('Áudio Obrigatório', 'Por favor, grave ou envie um arquivo de áudio para este pacote.');
+                    return false;
+                }
+            }
+
+            const inputs = currentStep.querySelectorAll('[required]');
+            for (const input of inputs) {
+                 if (!input.value.trim()) {
+                     const group = input.closest('.form-group');
+                     const label = group ? group.querySelector('label') : null;
+                     const labelText = label ? `"${label.textContent}"` : 'um campo obrigatório';
+                     if(label) label.style.color = '#FF4D4D';
+                     showAlert('Campo Obrigatório', `Por favor, preencha ${labelText}.`);
+                     return false;
+                 } else {
+                     const group = input.closest('.form-group');
+                     const label = group ? group.querySelector('label') : null;
+                     if(label) label.style.color = '';
+                 }
+            }
+
+            return true;
+        }
+
+        packageOptions.forEach(option => {
+            option.addEventListener('change', () => {
+                currentStepIndex = 0;
+                filterVisibleSteps();
+                showStep(currentStepIndex); 
+            });
+        });
+
+        nextBtn.addEventListener('click', () => {
+            if (validateCurrentStep()) {
+                currentStepIndex++;
+                showStep(currentStepIndex);
+            } else {
+                 if (!document.querySelector('input[name="pacote_escolhido"]:checked')) {
+                    showAlert('Campo Obrigatório', 'Por favor, selecione um pacote para continuar.');
+                }
+            }
+        });
+
+        prevBtn.addEventListener('click', () => {
+            currentStepIndex--;
+            showStep(currentStepIndex);
+        });
+
+        addPhotoBtn.addEventListener('click', () => fotosInput.click());
+
+        fotosInput.addEventListener('change', (event) => {
+            const files = event.target.files;
+            if (files.length === 0) return;
+
+            const selectedPackage = document.querySelector('input[name="pacote_escolhido"]:checked')?.value;
+            if (!selectedPackage) {
+                showAlert('Selecione um Pacote', 'Por favor, escolha um pacote antes de adicionar fotos.');
+                return;
+            }
+            const maxFiles = selectedPackage === 'Laço de Amor' ? 5 : 10;
+            const currentCount = selectedImageFiles.length;
+            const availableSlots = maxFiles - currentCount;
+
+            if (files.length > availableSlots) {
+                showAlert('Limite Excedido', `Você pode adicionar mais ${availableSlots} foto(s). Você tentou adicionar ${files.length}.`);
+            }
+            
+            Array.from(files).slice(0, availableSlots).forEach(file => {
+                selectedImageFiles.push(file);
+            });
+            
+            renderImagePreviews();
+            fotosInput.value = '';
+        });
+
+        function renderImagePreviews() {
+            imagePreviewContainer.innerHTML = '';
+            selectedImageFiles.forEach((file, index) => {
+                const previewItem = document.createElement('div');
+                previewItem.className = 'image-preview-item';
+
+                const img = document.createElement('img');
+                img.src = URL.createObjectURL(file);
+                
+                const removeBtn = document.createElement('button');
+                removeBtn.type = 'button';
+                removeBtn.className = 'remove-image-btn';
+                removeBtn.textContent = 'X';
+                
+                removeBtn.addEventListener('click', () => {
+                    selectedImageFiles.splice(index, 1);
+                    renderImagePreviews();
+                });
+
+                previewItem.appendChild(img);
+                previewItem.appendChild(removeBtn);
+                imagePreviewContainer.appendChild(previewItem);
+            });
+
+            photoValidationInput.value = selectedImageFiles.length > 0 ? 'valid' : '';
+        }
+        
+        function setAudioSource(file, sourceName) {
+            if (!file) {
+                audioFileToSubmit = null;
+                audioPlaybackElement.removeAttribute('src');
+                customAudioPlayer.classList.add('hidden');
+                audioUploadStatus.textContent = '';
+                return;
+            }
+            audioFileToSubmit = file;
+            const audioUrl = URL.createObjectURL(file);
+            audioPlaybackElement.src = audioUrl;
+            audioUploadStatus.textContent = `Áudio selecionado: ${sourceName}`;
+            customAudioPlayer.classList.remove('hidden');
+        }
+
+        recordBtn.addEventListener('click', async () => {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+                
+                mediaRecorder.ondataavailable = event => audioChunks.push(event.data);
+                
+                mediaRecorder.onstart = () => {
+                    audioChunks = [];
+                    setAudioSource(null); 
+                    recordStatus.innerHTML = '<span class="recording-dot"></span>Gravando...';
+                    recordStatus.classList.remove('hidden');
+                    recordBtn.classList.add('hidden');
+                    stopRecordBtn.classList.remove('hidden');
+                };
+
+                mediaRecorder.onstop = () => {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                    const file = new File([audioBlob], `gravacao_${Date.now()}.webm`, { type: 'audio/webm' });
+                    setAudioSource(file, 'Áudio gravado');
+                    
+                    recordStatus.textContent = 'Gravação concluída. Ouça abaixo.';
+                    stopRecordBtn.classList.add('hidden');
+                    recordBtn.classList.remove('hidden');
+                };
+                
+                mediaRecorder.start();
+            } catch (err) {
+                console.error("Erro ao acessar o microfone:", err);
+                showAlert("Erro de Microfone", "Não foi possível acessar seu microfone. Verifique as permissões.");
+            }
+        });
+
+        stopRecordBtn.addEventListener('click', () => {
+            if (mediaRecorder && mediaRecorder.state === "recording") mediaRecorder.stop();
+        });
+
+        audioInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                setAudioSource(file, file.name);
+                recordStatus.classList.add('hidden');
+            }
+        });
+        
+        function formatTime(seconds) {
+            const minutes = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${minutes}:${secs < 10 ? '0' : ''}${secs}`;
+        }
+
+        playerPlayBtn.addEventListener('click', () => {
+            if (audioPlaybackElement.paused) {
+                audioPlaybackElement.play();
+                playerPlayBtn.innerHTML = '<i class="fas fa-pause"></i>';
+            } else {
+                audioPlaybackElement.pause();
+                playerPlayBtn.innerHTML = '<i class="fas fa-play"></i>';
+            }
+        });
+
+        audioPlaybackElement.addEventListener('timeupdate', () => {
+            const progressPercent = (audioPlaybackElement.currentTime / audioPlaybackElement.duration) * 100;
+            playerSeekBar.style.setProperty('--seek-before-width', `${progressPercent}%`);
+            playerSeekBar.value = audioPlaybackElement.currentTime;
+            playerCurrentTime.textContent = formatTime(audioPlaybackElement.currentTime);
+        });
+
+        audioPlaybackElement.addEventListener('loadedmetadata', () => {
+            playerSeekBar.max = audioPlaybackElement.duration;
+            playerDuration.textContent = formatTime(audioPlaybackElement.duration);
+        });
+        
+        audioPlaybackElement.addEventListener('ended', () => {
+             playerPlayBtn.innerHTML = '<i class="fas fa-play"></i>';
+             playerSeekBar.value = 0;
+             playerSeekBar.style.setProperty('--seek-before-width', `0%`);
+        });
+
+        playerSeekBar.addEventListener('input', () => {
+            const seekTime = playerSeekBar.value;
+            audioPlaybackElement.currentTime = seekTime;
+            const progressPercent = (seekTime / audioPlaybackElement.duration) * 100;
+            playerSeekBar.style.setProperty('--seek-before-width', `${progressPercent}%`);
+        });
+        
+        // [ALTERAÇÃO IMPORTANTE] A função de envio foi totalmente substituída.
+        // Removemos toda a lógica de upload para ImgBB/GoFile.
+        // Agora, ela simplesmente cria um FormData e envia tudo de uma vez para o nosso backend.
+        async function handleFormSubmit(event) {
+            event.preventDefault();
+            
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = 'Enviando... <i class="fas fa-spinner fa-spin"></i>';
+
+            // FormData pega automaticamente todos os campos de texto e os arquivos dos inputs com `name`.
+            const formData = new FormData(form);
+
+            // Adiciona o áudio gravado (se existir) ao FormData.
+            if (audioFileToSubmit) {
+                // O backend vai identificar este arquivo como 'audio_gravado'.
+                formData.append('audio_gravado', audioFileToSubmit, audioFileToSubmit.name || 'gravacao.webm');
+            }
+
+            try {
+                // Envia TUDO de uma vez para o nosso backend.
+                const response = await fetch(form.action, { // form.action é '/api/send'
+                    method: 'POST',
+                    body: formData, // O FormData é inteligente e se envia no formato correto (multipart/form-data)
+                });
+                
+                if (response.ok) {
+                    showFinalMessage(true);
+                } else {
+                    const errorResult = await response.json();
+                    throw new Error(errorResult.message || 'Ocorreu um erro desconhecido no servidor.');
+                }
+
+            } catch (error) {
+                console.error("Erro ao enviar formulário:", error);
+                showFinalMessage(false, 0, error.message);
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = 'Enviar Pedido';
+            }
+        }
+
+        form.addEventListener("submit", handleFormSubmit);
+
+        function showFinalMessage(success, failedCount = 0, errorMsg = '') {
+            formContent.classList.add('hidden');
+            finalMessageContainer.classList.remove('hidden');
+            if(success) {
+                let message = `<i class="fas fa-check-circle success"></i><h2>Enviado com Sucesso!</h2><p>Suas informações foram recebidas. Em breve, entrarei em contato. Obrigado!</p>`;
+                finalMessageContainer.innerHTML = message;
+            } else {
+                finalMessageContainer.innerHTML = `<i class="fas fa-times-circle error"></i><h2>Ocorreu um Erro</h2><p>Não foi possível enviar suas informações. Detalhe: ${errorMsg}</p><p>Por favor, tente novamente. Se o erro persistir, entre em contato.</p>`;
+            }
+        }
+        
+        function showAlert(title, message) {
+            document.getElementById('modal-title').textContent = title;
+            document.getElementById('modal-message').textContent = message;
+            document.getElementById('alert-modal').classList.add('visible');
+        }
+
+        const modalOverlay = document.getElementById('alert-modal');
+        const modalCloseBtn = document.getElementById('modal-close');
+        
+        modalCloseBtn.addEventListener('click', () => modalOverlay.classList.remove('visible'));
+        modalOverlay.addEventListener('click', (e) => {
+            if (e.target === modalOverlay) modalOverlay.classList.remove('visible');
+        });
+        
+        filterVisibleSteps();
+        showStep(currentStepIndex);
+    });
+    </script>
+</body>
+</html>
