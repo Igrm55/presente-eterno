@@ -356,7 +356,7 @@
                 
                         <button type="button" id="add-photo-btn" class="btn btn-secondary" style="margin-top: 1rem;"><i class="fas fa-plus"></i> Adicionar Fotos</button>
                         
-                        <!-- Este input está escondido, mas é usado para o utilizador selecionar os ficheiros. -->
+                        <!-- Não alteramos o 'name' aqui, pois o JavaScript irá lidar com isso. -->
                         <input type="file" id="fotos-input" name="fotos" accept="image/*" class="hidden" multiple>
                 
                         <input type="text" id="photo-validation-input" required style="display: none;">
@@ -469,7 +469,7 @@
         const fotosInput = document.getElementById('fotos-input');
         const imagePreviewContainer = document.getElementById('image-preview-container');
         const photoValidationInput = document.getElementById('photo-validation-input');
-        let selectedImageFiles = []; // Usamos esta lista para gerir os previews.
+        let selectedImageFiles = [];
 
         const recordBtn = document.getElementById('record-btn');
         const stopRecordBtn = document.getElementById('stop-record-btn');
@@ -775,17 +775,29 @@
             submitBtn.innerHTML = 'A Enviar... <i class="fas fa-spinner fa-spin"></i>';
 
             const formData = new FormData(form);
-
-            // [A CORREÇÃO FINAL ESTÁ AQUI!]
-            // Antes de enviar, temos de adicionar manualmente os ficheiros de imagem
-            // da nossa lista 'selectedImageFiles' ao FormData.
-            selectedImageFiles.forEach(file => {
-                // O primeiro argumento 'fotos[]' sinaliza um array de ficheiros.
-                formData.append('fotos[]', file, file.name);
-            });
             
+            // Limpa os campos de ficheiro padrão do FormData, pois vamos adicioná-los manualmente
+            // para garantir a consistência.
+            formData.delete('fotos');
+            formData.delete('audio_enviado');
+
+            // [A GRANDE CORREÇÃO ESTÁ AQUI]
+            // Adicionamos TODOS os ficheiros a uma única etiqueta de array `anexos[]`.
+            // Isto simplifica a vida do nosso robô no backend.
+
+            // Adiciona as fotos selecionadas
+            selectedImageFiles.forEach(file => {
+                formData.append('anexos', file, file.name);
+            });
+
+            // Adiciona o ficheiro de áudio enviado, se existir
+            if (audioInput.files[0]) {
+                 formData.append('anexos', audioInput.files[0], audioInput.files[0].name);
+            }
+            
+            // Adiciona o ficheiro de áudio gravado, se existir
             if (audioFileToSubmit) {
-                formData.append('audio_gravado', audioFileToSubmit, audioFileToSubmit.name || 'gravacao.webm');
+                formData.append('anexos', audioFileToSubmit, audioFileToSubmit.name || 'gravacao.webm');
             }
 
             try {

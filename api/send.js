@@ -1,18 +1,15 @@
-// api/send.js - VERSÃO FINAL E DEFINITIVA
+// api/send.js - VERSÃO FINAL COM MANUSEAMENTO UNIFICADO
 
 import { formidable } from 'formidable';
 import nodemailer from 'nodemailer';
 import fs from 'fs';
 
-// Esta configuração é crucial para o formidable funcionar na Vercel.
 export const config = {
     api: {
         bodyParser: false,
     },
 };
 
-// Nova função dedicada para processar o formulário com Formidable.
-// Isto garante que o stream da requisição é manuseado corretamente.
 const parseForm = (req) => {
     return new Promise((resolve, reject) => {
         const form = formidable({});
@@ -38,49 +35,24 @@ export default async function handler(req, res) {
         const attachments = [];
 
         // [A MUDANÇA CRUCIAL ESTÁ AQUI]
-        // Processamos cada campo de ficheiro explicitamente para evitar conflitos.
-
-        // Processa as fotos
-        if (files.fotos) {
-            const photos = Array.isArray(files.fotos) ? files.fotos : [files.fotos];
-            for (const photo of photos) {
-                if (photo && photo.originalFilename) {
+        // Agora, só precisamos de procurar por um campo: 'anexos'.
+        if (files.anexos) {
+            // Garante que 'anexos' é sempre um array, mesmo que só venha um ficheiro.
+            const fileArray = Array.isArray(files.anexos) ? files.anexos : [files.anexos];
+            
+            for (const file of fileArray) {
+                if (file && file.originalFilename) {
                     attachments.push({
-                        filename: photo.originalFilename,
-                        content: fs.createReadStream(photo.filepath),
-                        contentType: photo.mimetype,
+                        filename: file.originalFilename,
+                        content: fs.createReadStream(file.filepath),
+                        contentType: file.mimetype,
                     });
                 }
-            }
-        }
-        
-        // Processa o áudio gravado
-        if (files.audio_gravado) {
-            const audio = Array.isArray(files.audio_gravado) ? files.audio_gravado[0] : files.audio_gravado;
-            if (audio && audio.originalFilename) {
-                 attachments.push({
-                    filename: audio.originalFilename,
-                    content: fs.createReadStream(audio.filepath),
-                    contentType: audio.mimetype,
-                });
-            }
-        }
-        
-        // Processa o áudio enviado
-        if (files.audio_enviado) {
-             const audio = Array.isArray(files.audio_enviado) ? files.audio_enviado[0] : files.audio_enviado;
-             if (audio && audio.originalFilename) {
-                 attachments.push({
-                    filename: audio.originalFilename,
-                    content: fs.createReadStream(audio.filepath),
-                    contentType: audio.mimetype,
-                });
             }
         }
 
         console.log(`Total de anexos preparados: ${attachments.length}`);
 
-        // O resto da lógica para montar e enviar o e-mail permanece a mesma.
         let emailBody = '<h1>Novo Pedido do Portal de Criação! ✨</h1>';
         for (const [key, value] of Object.entries(fields)) {
             const fieldValue = Array.isArray(value) ? value[0] : value;
@@ -120,7 +92,6 @@ export default async function handler(req, res) {
 
     } catch (error) {
         console.error('ERRO GERAL NO BACKEND:', error);
-        // Garante que o objeto de erro é serializável
         const errorMessage = error instanceof Error ? error.message : String(error);
         return res.status(500).json({ message: `Ocorreu um erro no servidor: ${errorMessage}` });
     }
